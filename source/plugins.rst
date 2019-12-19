@@ -955,8 +955,17 @@ etc/plugins/emqx_bridge_mqtt.conf
     ## 枚举值: mqttv3 | mqttv4 | mqttv5
     bridge.mqtt.aws.proto_ver = mqttv4
 
-    ## 客户端的 client_id
-    bridge.mqtt.aws.client_id = bridge_emq
+    ## 启动方式
+    ## 枚举值: manual | auto
+    bridge.mqtt.aws.start_type = manual
+
+    ## 是否为mqtt桥接模式
+    ## 此选项是为mqtt代理准备的，该代理没有
+    ## 支持bridge_mode，例如Rabbitmq的mqtt_plugin
+    bridge.mqtt.aws.bridge_mode = true
+
+    ## 客户端的 clientid
+    bridge.mqtt.aws.clientid = bridge_aws
 
     ## 客户端的 clean_start 字段
     ## 注: 有些 MQTT Broker 需要将 clean_start 值设成 `true`
@@ -967,6 +976,30 @@ etc/plugins/emqx_bridge_mqtt.conf
 
     ## 客户端的 password 字段
     bridge.mqtt.aws.password = passwd
+
+    ## 客户端的心跳间隔
+    bridge.mqtt.aws.keepalive = 60s
+
+    ## 需要转发到 AWS IoT HUB 的主题
+    bridge.mqtt.aws.forwards = topic1/#,topic2/#
+
+    ## 将消息转发到 AWS IoT HUB 的挂载点
+    bridge.mqtt.aws.forward_mountpoint = bridge/aws/${node}/
+
+    ## 订阅对端的主题
+    bridge.mqtt.aws.subscription.1.topic = cmd/topic1
+
+    ## 订阅对端主题的 QoS
+    bridge.mqtt.aws.subscription.1.qos = 1
+
+    ## 需要订阅AWS主题
+    ## bridge.mqtt.aws.subscription.1.topic = cmd/topic1
+
+    ## 需要订阅AWS主题QoS
+    ## bridge.mqtt.aws.subscription.1.qos = 1
+
+    ## 从 AWS IoT HUB 接收消息的挂载点
+    ## bridge.mqtt.aws.receive_mountpoint = receive/aws/
 
     ## 客户端是否使用 ssl 来连接远程服务器
     bridge.mqtt.aws.ssl = off
@@ -988,24 +1021,8 @@ etc/plugins/emqx_bridge_mqtt.conf
     ##
     ## See 'https://tools.ietf.org/html/rfc4279#section-2'.
     ## bridge.mqtt.aws.psk_ciphers = PSK-AES128-CBC-SHA,PSK-AES256-CBC-SHA,PSK-3DES-EDE-CBC-SHA,PSK-RC4-SHA
-
-    ## 客户端的心跳间隔
-    bridge.mqtt.aws.keepalive = 60s
-
-    ## 支持的 TLS 版本
+     ## 支持的 TLS 版本
     bridge.mqtt.aws.tls_versions = tlsv1.2,tlsv1.1,tlsv1
-
-    ## 需要被转发的消息的主题
-    bridge.mqtt.aws.forwards = sensor1/#,sensor2/#
-
-    ## 挂载点(mountpoint)
-    bridge.mqtt.aws.mountpoint = bridge/emqx2/${node}/
-
-    ## 订阅对端的主题
-    bridge.mqtt.aws.subscription.1.topic = cmd/topic1
-
-    ## 订阅对端主题的 QoS
-    bridge.mqtt.aws.subscription.1.qos = 1
 
     ## 桥接的重连间隔
     ## 默认: 30秒
@@ -1014,14 +1031,11 @@ etc/plugins/emqx_bridge_mqtt.conf
     ## QoS1/QoS2 消息的重传间隔
     bridge.mqtt.aws.retry_interval = 20s
 
-    ## Inflight 大小.
-    bridge.mqtt.aws.max_inflight_batches = 32
+    ## 批量发布消息，仅RPC Bridge支持
+    bridge.mqtt.aws.batch_size = 32
 
-    ## emqx_bridge 内部用于 batch 的消息数量
-    bridge.mqtt.aws.queue.batch_count_limit = 32
-
-    ## emqx_bridge 内部用于 batch 的消息字节数
-    bridge.mqtt.aws.queue.batch_bytes_limit = 1000MB
+    ## 飞行窗口大小
+    bridge.mqtt.aws.max_inflight_size = 32
 
     ## 放置 replayq 队列的路径，如果没有在配置中指定该项，那么 replayq
     ## 将会以 `mem-only` 的模式运行，消息不会缓存到磁盘上。
@@ -1029,6 +1043,11 @@ etc/plugins/emqx_bridge_mqtt.conf
 
     ## Replayq 数据段大小
     bridge.mqtt.aws.queue.replayq_seg_bytes = 10MB
+
+    ## Replayq 存储最大容量
+    ##
+    ## Value: Bytesize
+    bridge.mqtt.aws.queue.max_total_size = 5GB
 
 
 Delayed Publish 插件

@@ -289,74 +289,94 @@ EMQ X 的 MQTT Bridge 原理: 作为 MQTT 客户端连接到远程的 MQTT Broke
 
 ::
 
-    ## 桥接地址
-    bridge.mqtt.emqx2.address = 192.168.1.2:1883
+    ## 桥接地址： 使用节点名（nodename@host）则用于 RPC 桥接，使用 host:port 用于 MQTT 连接
+    bridge.mqtt.aws.address = 192.168.1.2:1883
 
     ## 桥接的协议版本
     ## 枚举值: mqttv3 | mqttv4 | mqttv5
-    bridge.mqtt.emqx2.proto_ver = mqttv4
+    bridge.mqtt.aws.proto_ver = mqttv4
 
-    ## 客户端的 client_id
-    bridge.mqtt.emqx2.client_id = bridge_emq
+    ## 启动方式
+    ## 枚举值: manual | auto
+    bridge.mqtt.aws.start_type = manual
+
+    ## 是否为mqtt桥接模式
+    ## 此选项是为mqtt代理准备的，该代理没有
+    ## 支持bridge_mode，例如Rabbitmq的mqtt_plugin
+    bridge.mqtt.aws.bridge_mode = true
+
+    ## 客户端的 clientid
+    bridge.mqtt.aws.clientid = bridge_aws
 
     ## 客户端的 clean_start 字段
     ## 注: 有些 MQTT Broker 需要将 clean_start 值设成 `true`
-    bridge.mqtt.emqx2.clean_start = true
+    bridge.mqtt.aws.clean_start = true
 
     ## 客户端的 username 字段
-    bridge.mqtt.emqx2.username = user
+    bridge.mqtt.aws.username = user
 
     ## 客户端的 password 字段
-    bridge.mqtt.emqx2.password = passwd
+    bridge.mqtt.aws.password = passwd
+
+    ## 客户端的心跳间隔
+    bridge.mqtt.aws.keepalive = 60s
+
+    ## 需要转发到 AWS IoT HUB 的主题
+    bridge.mqtt.aws.forwards = topic1/#,topic2/#
+
+    ## 将消息转发到 AWS IoT HUB 的挂载点
+    bridge.mqtt.aws.forward_mountpoint = bridge/aws/${node}/
+
+    ## 订阅对端的主题
+    bridge.mqtt.aws.subscription.1.topic = cmd/topic1
+
+    ## 订阅对端主题的 QoS
+    bridge.mqtt.aws.subscription.1.qos = 1
+
+    ## 需要订阅AWS主题
+    ## bridge.mqtt.aws.subscription.1.topic = cmd/topic1
+
+    ## 需要订阅AWS主题QoS
+    ## bridge.mqtt.aws.subscription.1.qos = 1
+
+    ## 从 AWS IoT HUB 接收消息的挂载点
+    ## bridge.mqtt.aws.receive_mountpoint = receive/aws/
 
     ## 客户端是否使用 ssl 来连接远程服务器
-    bridge.mqtt.emqx2.ssl = off
+    bridge.mqtt.aws.ssl = off
 
     ## 客户端 SSL 连接的 CA 证书 (PEM格式)
-    bridge.mqtt.emqx2.cacertfile = etc/certs/cacert.pem
+    bridge.mqtt.aws.cacertfile = etc/certs/cacert.pem
 
     ## 客户端 SSL 连接的 SSL 证书
-    bridge.mqtt.emqx2.certfile = etc/certs/client-cert.pem
+    bridge.mqtt.aws.certfile = etc/certs/client-cert.pem
 
     ## 客户端 SSL 连接的密钥文件
-    bridge.mqtt.emqx2.keyfile = etc/certs/client-key.pem
+    bridge.mqtt.aws.keyfile = etc/certs/client-key.pem
 
     ## SSL 加密方式
-    bridge.mqtt.emqx2.ciphers = ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384
+    bridge.mqtt.aws.ciphers = ECDHE-ECDSA-AES256-GCM-SHA384,ECDHE-RSA-AES256-GCM-SHA384
 
     ## TLS PSK 的加密套件
     ## 注意 'listener.ssl.external.ciphers' 和 'listener.ssl.external.psk_ciphers' 不能同时配置
     ##
     ## See 'https://tools.ietf.org/html/rfc4279#section-2'.
-    ## bridge.mqtt.emqx2.psk_ciphers = PSK-AES128-CBC-SHA,PSK-AES256-CBC-SHA,PSK-3DES-EDE-CBC-SHA,PSK-RC4-SHA
-
-    ## 客户端的心跳间隔
-    bridge.mqtt.emqx2.keepalive = 60s
-
-    ## 支持的 TLS 版本
-    bridge.mqtt.emqx2.tls_versions = tlsv1.2,tlsv1.1,tlsv1
-
-    ## 需要被转发的消息的主题
-    bridge.mqtt.emqx2.forwards = sensor1/#,sensor2/#
-
-    ## 挂载点(mountpoint)
-    bridge.mqtt.emqx2.mountpoint = bridge/emqx2/${node}/
-
-    ## 订阅对端的主题
-    bridge.mqtt.emqx2.subscription.1.topic = cmd/topic1
-
-    ## 订阅对端主题的 QoS
-    bridge.mqtt.emqx2.subscription.1.qos = 1
+    ## bridge.mqtt.aws.psk_ciphers = PSK-AES128-CBC-SHA,PSK-AES256-CBC-SHA,PSK-3DES-EDE-CBC-SHA,PSK-RC4-SHA
+     ## 支持的 TLS 版本
+    bridge.mqtt.aws.tls_versions = tlsv1.2,tlsv1.1,tlsv1
 
     ## 桥接的重连间隔
     ## 默认: 30秒
-    bridge.mqtt.emqx2.reconnect_interval = 30s
+    bridge.mqtt.aws.reconnect_interval = 30s
 
     ## QoS1/QoS2 消息的重传间隔
-    bridge.mqtt.emqx2.retry_interval = 20s
+    bridge.mqtt.aws.retry_interval = 20s
 
-    ## Inflight 大小.
-    bridge.mqtt.emqx2.max_inflight_batches = 32
+    ## 批量发布消息，仅RPC Bridge支持
+    bridge.mqtt.aws.batch_size = 32
+
+    ## 飞行窗口大小
+    bridge.mqtt.aws.max_inflight_size = 32
 
 EMQ X 桥接缓存配置
 >>>>>>>>>>>>>>>>>>
@@ -365,22 +385,21 @@ EMQ X 的 Bridge 拥有消息缓存机制，缓存机制同时适用于 RPC 桥�
 
 ::
 
-    ## emqx_bridge 内部用于 batch 的消息数量
-    bridge.mqtt.emqx2.queue.batch_count_limit = 32
-
-    ## emqx_bridge 内部用于 batch 的消息字节数
-    bridge.mqtt.emqx2.queue.batch_bytes_limit = 1000MB
-
     ## 放置 replayq 队列的路径，如果没有在配置中指定该项，那么 replayq
     ## 将会以 `mem-only` 的模式运行，消息不会缓存到磁盘上。
-    bridge.mqtt.emqx2.queue.replayq_dir = data/emqx_emqx2_bridge/
+    bridge.mqtt.aws.queue.replayq_dir = data/emqx_aws_bridge/
 
     ## Replayq 数据段大小
-    bridge.mqtt.emqx2.queue.replayq_seg_bytes = 10MB
+    bridge.mqtt.aws.queue.replayq_seg_bytes = 10MB
 
-``bridge.mqtt.emqx2.queue.replayq_dir`` 是用于指定 bridge 存储队列的路径的配置参数。
+    ## Replayq 存储最大容量
+    ##
+    ## Value: Bytesize
+    bridge.mqtt.aws.queue.max_total_size = 5GB
 
-``bridge.mqtt.emqx2.queue.replayq_seg_bytes`` 是用于指定缓存在磁盘上的消息队列的最大单个文件的大小，如果消息队列大小超出指定值的话，会创建新的文件来存储消息队列。
+``bridge.mqtt.aws.queue.replayq_dir`` 是用于指定 bridge 存储队列的路径的配置参数。
+
+``bridge.mqtt.aws.queue.replayq_seg_bytes`` 是用于指定缓存在磁盘上的消息队列的最大单个文件的大小，如果消息队列大小超出指定值的话，会创建新的文件来存储消息队列。
 
 EMQ X 桥接的命令行使用
 >>>>>>>>>>>>>>>>>>>>>>
@@ -411,27 +430,27 @@ EMQ X 桥接的命令行使用
 .. code-block:: bash
 
     $ ./bin/emqx_ctl bridges list
-    name: emqx     status: Stopped
+    name: aws     status: Stopped
 
 启动指定 bridge
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges start emqx
+    $ ./bin/emqx_ctl bridges start aws
     Start bridge successfully.
 
 停止指定 bridge
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges stop emqx
+    $ ./bin/emqx_ctl bridges stop aws
     Stop bridge successfully.
 
 列出指定 bridge 的转发主题
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges forwards emqx
+    $ ./bin/emqx_ctl bridges forwards aws
     topic:   topic1/#
     topic:   topic2/#
 
@@ -439,21 +458,21 @@ EMQ X 桥接的命令行使用
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges add-forwards emqx 'topic3/#'
+    $ ./bin/emqx_ctl bridges add-forwards aws 'topic3/#'
     Add-forward topic successfully.
 
 删除指定 bridge 的转发主题
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges del-forwards emqx 'topic3/#'
+    $ ./bin/emqx_ctl bridges del-forwards aws 'topic3/#'
     Del-forward topic successfully.
 
 列出指定 bridge 的订阅
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges subscriptions emqx
+    $ ./bin/emqx_ctl bridges subscriptions aws
     topic: cmd/topic1, qos: 1
     topic: cmd/topic2, qos: 1
 
@@ -461,14 +480,14 @@ EMQ X 桥接的命令行使用
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges add-subscription emqx 'cmd/topic3' 1
+    $ ./bin/emqx_ctl bridges add-subscription aws 'cmd/topic3' 1
     Add-subscription topic successfully.
 
 删除指定 bridge 的订阅主题
 
 .. code-block:: bash
 
-    $ ./bin/emqx_ctl bridges del-subscription emqx 'cmd/topic3'
+    $ ./bin/emqx_ctl bridges del-subscription aws 'cmd/topic3'
     Del-subscription topic successfully.
 
 注: 如果有创建多个 Bridge 的需求，需要复制默认的 Bridge 配置，再拷贝到 emqx_bridge_mqtt.conf 中，根据需求重命名 bridge.mqtt.${name}.config 中的 name 即可。
